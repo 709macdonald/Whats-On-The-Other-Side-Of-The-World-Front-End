@@ -58,3 +58,15 @@ body {
   background-color: rgb(255, 252, 248);
   padding: 1rem;
 }
+
+/* Add this to your CSS file */
+gmp-map {
+  height: 100%;
+  width: 100%;
+  display: block;
+}
+
+.mainScreen {
+  height: 70vh; /* Adjust as needed */
+  position: relative;
+}
