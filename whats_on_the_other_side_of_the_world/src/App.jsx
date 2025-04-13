@@ -89,7 +89,7 @@ function App() {
         console.error("Error loading McDonald's data:", error);
 
         // Fallback to fetch if import doesn't work
-        fetch("/src/data/McDonalds.json")
+        fetch("../src/data/McDonalds.json")
           .then((response) => {
             if (!response.ok) {
               throw new Error("Failed to fetch McDonald's data");
@@ -276,6 +276,7 @@ function App() {
         nearestCountryToOriginal={locationDetails.originalCountry}
         nearestCountryToAntipode={locationDetails.antipodeCountry}
         nearestMcDonalds={nearestMcDonalds}
+        viewTarget={viewTarget}
       />
     </>
   );

@@ -57,23 +57,31 @@ function GoogleMapComponent({
 
   // Handle view target changes (for the zoom buttons)
   useEffect(() => {
-    if (
-      !mapElement ||
-      !viewTarget ||
-      !currentLocations.original ||
-      !currentLocations.antipode
-    ) {
+    if (!mapElement || !viewTarget) {
       return;
     }
 
     let centerPoint;
     let zoomLevel;
 
-    if (viewTarget === "original") {
+    // Remove McDonald's marker if we're not viewing it anymore
+    if (
+      viewTarget !== "mcdonalds" &&
+      markers.mcdonalds &&
+      markers.mcdonalds.parentNode === mapElement
+    ) {
+      mapElement.removeChild(markers.mcdonalds);
+      setMarkers((prev) => ({
+        ...prev,
+        mcdonalds: null,
+      }));
+    }
+
+    if (viewTarget === "original" && currentLocations.original) {
       centerPoint = `${currentLocations.original.lat},${currentLocations.original.lng}`;
       zoomLevel = "8"; // Adjust zoom level as desired for original location
       console.log("Zooming to original location");
-    } else if (viewTarget === "antipode") {
+    } else if (viewTarget === "antipode" && currentLocations.antipode) {
       centerPoint = `${currentLocations.antipode.lat},${currentLocations.antipode.lng}`;
       zoomLevel = "8"; // Adjust zoom level as desired for antipode
       console.log("Zooming to antipode location");
@@ -92,7 +100,7 @@ function GoogleMapComponent({
       mapElement.setAttribute("center", centerPoint);
       mapElement.setAttribute("zoom", zoomLevel);
     }
-  }, [viewTarget, mapElement, currentLocations]);
+  }, [viewTarget, mapElement, currentLocations, markers]);
 
   // Fetch country information for a location
   const getCountryFromCoordinates = async (lat, lng) => {
@@ -144,7 +152,7 @@ function GoogleMapComponent({
 
   // Update map with McDonald's marker when it changes
   useEffect(() => {
-    if (!mapElement || !nearestMcDonalds) return;
+    if (!mapElement || !nearestMcDonalds || viewTarget !== "mcdonalds") return;
 
     // Update current locations with McDonalds
     setCurrentLocations((prev) => ({
@@ -203,10 +211,8 @@ function GoogleMapComponent({
     console.log("McDonald's marker added to map");
 
     // If current view target is mcdonalds, update map center
-    if (viewTarget === "mcdonalds") {
-      mapElement.setAttribute("center", mcdonaldsPosition);
-      mapElement.setAttribute("zoom", "12");
-    }
+    mapElement.setAttribute("center", mcdonaldsPosition);
+    mapElement.setAttribute("zoom", "12");
   }, [nearestMcDonalds, mapElement, viewTarget]);
 
   // Update map center and markers on location change
@@ -265,16 +271,16 @@ function GoogleMapComponent({
       }
     });
 
-    // Create marker for searched location (gray)
+    // Create marker for searched location (green to match button)
     const createSearchedLocationMarker = () => {
       const container = document.createElement("div");
       container.style.position = "relative";
 
-      // Create the gray pointer marker
+      // Create the green pointer marker (matching the button color #4CAF50)
       const marker = document.createElement("div");
       marker.innerHTML = `
         <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M20 0C12.8 0 7 5.8 7 13C7 20.2 20 40 20 40S33 20.2 33 13C33 5.8 27.2 0 20 0ZM20 17.5C17.25 17.5 15 15.25 15 12.5C15 9.75 17.25 7.5 20 7.5C22.75 7.5 25 9.75 25 12.5C25 15.25 22.75 17.5 20 17.5Z" fill="#888888"/>
+          <path d="M20 0C12.8 0 7 5.8 7 13C7 20.2 20 40 20 40S33 20.2 33 13C33 5.8 27.2 0 20 0ZM20 17.5C17.25 17.5 15 15.25 15 12.5C15 9.75 17.25 7.5 20 7.5C22.75 7.5 25 9.75 25 12.5C25 15.25 22.75 17.5 20 17.5Z" fill="#4CAF50"/>
         </svg>
       `;
       container.appendChild(marker);

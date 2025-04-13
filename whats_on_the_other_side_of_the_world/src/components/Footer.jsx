@@ -11,6 +11,7 @@ export default function Footer({
   nearestCountryToOriginal = "",
   nearestCountryToAntipode = "",
   nearestMcDonalds = null,
+  viewTarget = null,
 }) {
   return (
     <div
@@ -62,7 +63,7 @@ export default function Footer({
       )}
 
       {/* McDonald's information display */}
-      {searchPerformed && nearestMcDonalds && (
+      {searchPerformed && nearestMcDonalds && viewTarget === "mcdonalds" && (
         <div
           className="mcdonalds-info"
           style={{
