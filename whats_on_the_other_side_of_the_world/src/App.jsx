@@ -105,12 +105,17 @@ function App() {
               />
             )}
             <GoogleMapComponent center={searchLocation} />
+
+            {/* Removed duplicate "Search Again" button */}
           </>
         ) : (
           <p>Loading Google Maps...</p>
         )}
       </div>
-      <Footer onReset={handleReset} />
+      <Footer
+        onReset={handleReset}
+        searchPerformed={!showSearch && searchLocation !== null}
+      />
     </>
   );
 }

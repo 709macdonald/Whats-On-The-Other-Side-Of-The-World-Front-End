@@ -98,7 +98,16 @@ export default function SearchBar({ onPlaceSelected }) {
   };
 
   return (
-    <div className="searchDiv" style={{ display: "flex", gap: "8px" }}>
+    <div
+      className="searchDiv"
+      style={{
+        display: "flex",
+        gap: "8px",
+        maxWidth: "500px",
+        margin: "20px auto",
+        padding: "0 20px",
+      }}
+    >
       <input
         ref={inputRef}
         type="text"
