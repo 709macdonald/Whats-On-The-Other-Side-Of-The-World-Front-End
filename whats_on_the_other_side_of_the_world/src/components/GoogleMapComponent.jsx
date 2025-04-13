@@ -71,11 +71,10 @@ function GoogleMapComponent({ center }) {
     const antipode = calculateAntipode(center.lat, center.lng);
     console.log("Antipode location:", antipode);
 
-    // Center the map to show both points
-    // We'll use the original location as the center, but with a lower zoom
-    const centerString = `${center.lat},${center.lng}`;
-    mapElement.setAttribute("center", centerString);
-    mapElement.setAttribute("zoom", "2"); // Zoom out to potentially see both points
+    // CHANGE: Center the map on the antipode with a higher zoom level
+    const antipodeString = `${antipode.lat},${antipode.lng}`;
+    mapElement.setAttribute("center", antipodeString);
+    mapElement.setAttribute("zoom", "8"); // Zoom in to show the antipode area in detail
 
     // Remove old markers if they exist
     Object.values(markers).forEach((marker) => {
@@ -123,6 +122,7 @@ function GoogleMapComponent({ center }) {
     const searchedLocationMarker = document.createElement(
       "gmp-advanced-marker"
     );
+    const centerString = `${center.lat},${center.lng}`;
     searchedLocationMarker.setAttribute("position", centerString);
     searchedLocationMarker.setAttribute("title", "Searched Location");
 
@@ -137,7 +137,6 @@ function GoogleMapComponent({ center }) {
     mapElement.appendChild(searchedLocationMarker);
 
     // Create and add antipode marker
-    const antipodeString = `${antipode.lat},${antipode.lng}`;
     const antipodeMarker = document.createElement("gmp-advanced-marker");
     antipodeMarker.setAttribute("position", antipodeString);
     antipodeMarker.setAttribute("title", "Antipode (Opposite Point)");
@@ -159,6 +158,13 @@ function GoogleMapComponent({ center }) {
     });
 
     console.log("Both markers added to map");
+
+    // Add a small delay before zooming in to ensure the map has updated properly
+    setTimeout(() => {
+      console.log("Zooming in to antipode location");
+      mapElement.setAttribute("center", antipodeString);
+      mapElement.setAttribute("zoom", "8");
+    }, 300);
   }, [center, mapElement]);
 
   return (
