@@ -13,6 +13,7 @@ function App() {
   const [searchLocation, setSearchLocation] = useState(null);
   const [searchText, setSearchText] = useState("");
   const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
+  const [showSearch, setShowSearch] = useState(true);
 
   useEffect(() => {
     if (
@@ -56,6 +57,7 @@ function App() {
   const handlePlaceSelected = ({ lat, lng }) => {
     console.log("Location selected from autocomplete:", { lat, lng });
     setSearchLocation({ lat, lng });
+    setShowSearch(false); // Hide search bar after selection
   };
 
   // Handle text search when autocomplete doesn't provide coordinates
@@ -75,11 +77,19 @@ function App() {
 
           console.log("Geocoded coordinates:", { lat, lng });
           setSearchLocation({ lat, lng });
+          setShowSearch(false); // Hide search bar after search
         } else {
           console.log("Geocoding failed with status:", status);
         }
       });
     }
+  };
+
+  // Handle reset
+  const handleReset = () => {
+    setSearchLocation(null);
+    setSearchText("");
+    setShowSearch(true); // Show search bar again
   };
 
   return (
@@ -88,22 +98,19 @@ function App() {
       <div className="mainScreen">
         {apiKey && googleScriptLoaded ? (
           <>
-            <SearchBar
-              onPlaceSelected={handlePlaceSelected}
-              onSearchText={handleSearchText}
-            />
+            {showSearch && (
+              <SearchBar
+                onPlaceSelected={handlePlaceSelected}
+                onSearchText={handleSearchText}
+              />
+            )}
             <GoogleMapComponent center={searchLocation} />
           </>
         ) : (
           <p>Loading Google Maps...</p>
         )}
       </div>
-      <Footer
-        onReset={() => {
-          setSearchLocation(null);
-          setSearchText("");
-        }}
-      />
+      <Footer onReset={handleReset} />
     </>
   );
 }

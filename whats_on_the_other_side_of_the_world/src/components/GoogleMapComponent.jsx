@@ -19,7 +19,7 @@ function GoogleMapComponent({ center }) {
       const newMapElement = document.createElement("gmp-map");
       newMapElement.setAttribute("zoom", "2");
       newMapElement.setAttribute("map-id", "DEMO_MAP_ID");
-      newMapElement.setAttribute("center", "0,0");
+      newMapElement.setAttribute("center", "0,0"); // Original default center showing the whole world
 
       mapContainerRef.current.appendChild(newMapElement);
       setMapElement(newMapElement);
@@ -34,9 +34,24 @@ function GoogleMapComponent({ center }) {
     console.log("Center changed:", center);
     console.log("Map element exists:", !!mapElement);
 
-    if (!mapElement || !center) return;
+    if (!mapElement) return;
 
-    // Center the map
+    // If center is null (reset was clicked), reset the map to default view
+    if (!center) {
+      console.log("Resetting map to world view");
+      mapElement.setAttribute("center", "0,0");
+      mapElement.setAttribute("zoom", "2");
+
+      // Remove marker if it exists
+      if (markerElement && markerElement.parentNode === mapElement) {
+        console.log("Removing marker on reset");
+        mapElement.removeChild(markerElement);
+        setMarkerElement(null);
+      }
+      return;
+    }
+
+    // Center the map on the selected location
     const centerString = `${center.lat},${center.lng}`;
     console.log("Setting map center to:", centerString);
     mapElement.setAttribute("center", centerString);
