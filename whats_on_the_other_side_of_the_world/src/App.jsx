@@ -14,6 +14,13 @@ function App() {
   const [searchText, setSearchText] = useState("");
   const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
   const [showSearch, setShowSearch] = useState(true);
+  const [viewTarget, setViewTarget] = useState(null);
+  const [locationDetails, setLocationDetails] = useState({
+    original: null,
+    antipode: null,
+    originalCountry: "",
+    antipodeCountry: "",
+  });
 
   useEffect(() => {
     if (
@@ -58,6 +65,8 @@ function App() {
     console.log("Location selected from autocomplete:", { lat, lng });
     setSearchLocation({ lat, lng });
     setShowSearch(false); // Hide search bar after selection
+    // Set view target to antipode by default
+    setViewTarget("antipode");
   };
 
   // Handle text search when autocomplete doesn't provide coordinates
@@ -78,6 +87,8 @@ function App() {
           console.log("Geocoded coordinates:", { lat, lng });
           setSearchLocation({ lat, lng });
           setShowSearch(false); // Hide search bar after search
+          // Set view target to antipode by default
+          setViewTarget("antipode");
         } else {
           console.log("Geocoding failed with status:", status);
         }
@@ -85,11 +96,33 @@ function App() {
     }
   };
 
+  // Handle zoom to original location
+  const handleViewOriginal = () => {
+    setViewTarget("original");
+  };
+
+  // Handle zoom to antipode
+  const handleViewAntipode = () => {
+    setViewTarget("antipode");
+  };
+
+  // Handle location details update
+  const handleLocationDetails = (details) => {
+    setLocationDetails(details);
+  };
+
   // Handle reset
   const handleReset = () => {
     setSearchLocation(null);
     setSearchText("");
     setShowSearch(true); // Show search bar again
+    setViewTarget(null);
+    setLocationDetails({
+      original: null,
+      antipode: null,
+      originalCountry: "",
+      antipodeCountry: "",
+    });
   };
 
   return (
@@ -104,9 +137,11 @@ function App() {
                 onSearchText={handleSearchText}
               />
             )}
-            <GoogleMapComponent center={searchLocation} />
-
-            {/* Removed duplicate "Search Again" button */}
+            <GoogleMapComponent
+              center={searchLocation}
+              viewTarget={viewTarget}
+              onLocationDetails={handleLocationDetails}
+            />
           </>
         ) : (
           <p>Loading Google Maps...</p>
@@ -114,7 +149,13 @@ function App() {
       </div>
       <Footer
         onReset={handleReset}
+        onViewOriginal={handleViewOriginal}
+        onViewAntipode={handleViewAntipode}
         searchPerformed={!showSearch && searchLocation !== null}
+        originalLocation={locationDetails.original}
+        antipodeLocation={locationDetails.antipode}
+        nearestCountryToOriginal={locationDetails.originalCountry}
+        nearestCountryToAntipode={locationDetails.antipodeCountry}
       />
     </>
   );

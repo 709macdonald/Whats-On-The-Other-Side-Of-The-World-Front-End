@@ -1,10 +1,16 @@
 import { useRef, useEffect, useState } from "react";
 
-function GoogleMapComponent({ center }) {
+function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
   const mapContainerRef = useRef(null);
   const [mapElement, setMapElement] = useState(null);
   const [markers, setMarkers] = useState({
     searchedLocation: null,
+    antipode: null,
+  });
+
+  // Store the current locations for zoom controls
+  const [currentLocations, setCurrentLocations] = useState({
+    original: null,
     antipode: null,
   });
 
@@ -42,6 +48,89 @@ function GoogleMapComponent({ center }) {
     }
   }, [mapElement]);
 
+  // Handle view target changes (for the zoom buttons)
+  useEffect(() => {
+    if (
+      !mapElement ||
+      !viewTarget ||
+      !currentLocations.original ||
+      !currentLocations.antipode
+    ) {
+      return;
+    }
+
+    let centerPoint;
+    let zoomLevel;
+
+    if (viewTarget === "original") {
+      centerPoint = `${currentLocations.original.lat},${currentLocations.original.lng}`;
+      zoomLevel = "8"; // Adjust zoom level as desired for original location
+      console.log("Zooming to original location");
+    } else if (viewTarget === "antipode") {
+      centerPoint = `${currentLocations.antipode.lat},${currentLocations.antipode.lng}`;
+      zoomLevel = "8"; // Adjust zoom level as desired for antipode
+      console.log("Zooming to antipode location");
+    } else if (viewTarget === "both") {
+      // Use a zoomed out view to see both points
+      centerPoint = "0,0"; // World center
+      zoomLevel = "2";
+      console.log("Zooming out to show both locations");
+    }
+
+    if (centerPoint && zoomLevel) {
+      mapElement.setAttribute("center", centerPoint);
+      mapElement.setAttribute("zoom", zoomLevel);
+    }
+  }, [viewTarget, mapElement, currentLocations]);
+
+  // Fetch country information for a location
+  const getCountryFromCoordinates = async (lat, lng) => {
+    try {
+      if (!window.google || !window.google.maps) {
+        return "";
+      }
+
+      const geocoder = new window.google.maps.Geocoder();
+      const response = await new Promise((resolve, reject) => {
+        geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+          if (status === "OK") {
+            resolve(results);
+          } else {
+            reject(status);
+          }
+        });
+      });
+
+      // Look for the country in the address components
+      let countryName = "";
+      if (response && response.length > 0) {
+        for (let i = 0; i < response.length; i++) {
+          const result = response[i];
+
+          // First try to find a country component
+          const countryComponent = result.address_components.find((component) =>
+            component.types.includes("country")
+          );
+
+          if (countryComponent) {
+            countryName = countryComponent.long_name;
+            break;
+          }
+
+          // If no country found, try to get the most relevant location name
+          if (i === 0 && result.formatted_address) {
+            countryName = result.formatted_address;
+          }
+        }
+      }
+
+      return countryName;
+    } catch (error) {
+      console.error("Error getting country information:", error);
+      return "";
+    }
+  };
+
   // Update map center and markers on location change
   useEffect(() => {
     if (!mapElement) return;
@@ -64,12 +153,24 @@ function GoogleMapComponent({ center }) {
         antipode: null,
       });
 
+      // Clear locations
+      setCurrentLocations({
+        original: null,
+        antipode: null,
+      });
+
       return;
     }
 
     // Calculate antipode location
     const antipode = calculateAntipode(center.lat, center.lng);
     console.log("Antipode location:", antipode);
+
+    // Store the locations for zoom controls
+    setCurrentLocations({
+      original: center,
+      antipode: antipode,
+    });
 
     // CHANGE: Center the map on the antipode with a higher zoom level
     const antipodeString = `${antipode.lat},${antipode.lng}`;
@@ -165,6 +266,29 @@ function GoogleMapComponent({ center }) {
       mapElement.setAttribute("center", antipodeString);
       mapElement.setAttribute("zoom", "8");
     }, 300);
+
+    // Get country information for both locations
+    const fetchLocationDetails = async () => {
+      const originalCountry = await getCountryFromCoordinates(
+        center.lat,
+        center.lng
+      );
+      const antipodeCountry = await getCountryFromCoordinates(
+        antipode.lat,
+        antipode.lng
+      );
+
+      if (onLocationDetails) {
+        onLocationDetails({
+          original: center,
+          antipode: antipode,
+          originalCountry,
+          antipodeCountry,
+        });
+      }
+    };
+
+    fetchLocationDetails();
   }, [center, mapElement]);
 
   return (
