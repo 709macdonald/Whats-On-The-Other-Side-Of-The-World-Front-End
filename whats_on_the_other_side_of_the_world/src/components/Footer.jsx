@@ -5,10 +5,12 @@ export default function Footer({
   searchPerformed = false,
   onViewOriginal,
   onViewAntipode,
+  onViewMcDonalds,
   originalLocation = null,
   antipodeLocation = null,
   nearestCountryToOriginal = "",
   nearestCountryToAntipode = "",
+  nearestMcDonalds = null,
 }) {
   return (
     <div
@@ -56,6 +58,29 @@ export default function Footer({
               {nearestCountryToAntipode && ` - ${nearestCountryToAntipode}`}
             </p>
           </div>
+        </div>
+      )}
+
+      {/* McDonald's information display */}
+      {searchPerformed && nearestMcDonalds && (
+        <div
+          className="mcdonalds-info"
+          style={{
+            width: "100%",
+            maxWidth: "800px",
+            marginBottom: "15px",
+            padding: "10px",
+            backgroundColor: "#FFBC0D",
+            borderRadius: "5px",
+            color: "#DA291C",
+            fontWeight: "bold",
+            textAlign: "center",
+          }}
+        >
+          <p style={{ margin: "0" }}>
+            Nearest McDonald's: {nearestMcDonalds.name} (
+            {nearestMcDonalds.distance.toFixed(2)} km away)
+          </p>
         </div>
       )}
 
@@ -123,6 +148,7 @@ export default function Footer({
 
             <button
               className="McDonaldsButton"
+              onClick={onViewMcDonalds}
               style={{
                 padding: "8px 16px",
                 backgroundColor: "#FFBC0D",
@@ -131,6 +157,7 @@ export default function Footer({
                 borderRadius: "4px",
                 cursor: "pointer",
                 fontSize: "16px",
+                fontWeight: "bold",
               }}
             >
               Nearest McDonalds

@@ -1,17 +1,24 @@
 import { useRef, useEffect, useState } from "react";
 
-function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
+function GoogleMapComponent({
+  center,
+  viewTarget,
+  onLocationDetails,
+  nearestMcDonalds,
+}) {
   const mapContainerRef = useRef(null);
   const [mapElement, setMapElement] = useState(null);
   const [markers, setMarkers] = useState({
     searchedLocation: null,
     antipode: null,
+    mcdonalds: null,
   });
 
   // Store the current locations for zoom controls
   const [currentLocations, setCurrentLocations] = useState({
     original: null,
     antipode: null,
+    mcdonalds: null,
   });
 
   // Calculate antipode (opposite point on Earth)
@@ -70,6 +77,10 @@ function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
       centerPoint = `${currentLocations.antipode.lat},${currentLocations.antipode.lng}`;
       zoomLevel = "8"; // Adjust zoom level as desired for antipode
       console.log("Zooming to antipode location");
+    } else if (viewTarget === "mcdonalds" && currentLocations.mcdonalds) {
+      centerPoint = `${currentLocations.mcdonalds.latitude},${currentLocations.mcdonalds.longitude}`;
+      zoomLevel = "12"; // Zoom in closer for McDonalds location
+      console.log("Zooming to nearest McDonald's location");
     } else if (viewTarget === "both") {
       // Use a zoomed out view to see both points
       centerPoint = "0,0"; // World center
@@ -131,6 +142,73 @@ function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
     }
   };
 
+  // Update map with McDonald's marker when it changes
+  useEffect(() => {
+    if (!mapElement || !nearestMcDonalds) return;
+
+    // Update current locations with McDonalds
+    setCurrentLocations((prev) => ({
+      ...prev,
+      mcdonalds: nearestMcDonalds,
+    }));
+
+    // Remove old McDonald's marker if it exists
+    if (markers.mcdonalds && markers.mcdonalds.parentNode === mapElement) {
+      mapElement.removeChild(markers.mcdonalds);
+    }
+
+    // Create marker for McDonald's (yellow and red)
+    const createMcDonaldsMarker = () => {
+      const container = document.createElement("div");
+      container.style.position = "relative";
+
+      // Create the McDonald's marker with branded colors
+      const marker = document.createElement("div");
+      marker.innerHTML = `
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M20 0C12.8 0 7 5.8 7 13C7 20.2 20 40 20 40S33 20.2 33 13C33 5.8 27.2 0 20 0ZM20 17.5C17.25 17.5 15 15.25 15 12.5C15 9.75 17.25 7.5 20 7.5C22.75 7.5 25 9.75 25 12.5C25 15.25 22.75 17.5 20 17.5Z" fill="#FFBC0D"/>
+          <circle cx="20" cy="12.5" r="5" fill="#DA291C"/>
+        </svg>
+      `;
+      container.appendChild(marker);
+
+      return container;
+    };
+
+    // Create and add McDonald's marker
+    const mcdonaldsMarker = document.createElement("gmp-advanced-marker");
+    const mcdonaldsPosition = `${nearestMcDonalds.latitude},${nearestMcDonalds.longitude}`;
+    mcdonaldsMarker.setAttribute("position", mcdonaldsPosition);
+    mcdonaldsMarker.setAttribute(
+      "title",
+      `McDonald's: ${nearestMcDonalds.name}`
+    );
+
+    // Try to set a custom element for the McDonald's marker
+    try {
+      const mcdonaldsMarkerElement = createMcDonaldsMarker();
+      mcdonaldsMarker.appendChild(mcdonaldsMarkerElement);
+    } catch (error) {
+      console.error("Error creating custom McDonald's marker:", error);
+    }
+
+    mapElement.appendChild(mcdonaldsMarker);
+
+    // Update markers state
+    setMarkers((prev) => ({
+      ...prev,
+      mcdonalds: mcdonaldsMarker,
+    }));
+
+    console.log("McDonald's marker added to map");
+
+    // If current view target is mcdonalds, update map center
+    if (viewTarget === "mcdonalds") {
+      mapElement.setAttribute("center", mcdonaldsPosition);
+      mapElement.setAttribute("zoom", "12");
+    }
+  }, [nearestMcDonalds, mapElement, viewTarget]);
+
   // Update map center and markers on location change
   useEffect(() => {
     if (!mapElement) return;
@@ -151,12 +229,14 @@ function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
       setMarkers({
         searchedLocation: null,
         antipode: null,
+        mcdonalds: null,
       });
 
       // Clear locations
       setCurrentLocations({
         original: null,
         antipode: null,
+        mcdonalds: null,
       });
 
       return;
@@ -167,10 +247,11 @@ function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
     console.log("Antipode location:", antipode);
 
     // Store the locations for zoom controls
-    setCurrentLocations({
+    setCurrentLocations((prev) => ({
+      ...prev,
       original: center,
       antipode: antipode,
-    });
+    }));
 
     // CHANGE: Center the map on the antipode with a higher zoom level
     const antipodeString = `${antipode.lat},${antipode.lng}`;
@@ -256,6 +337,7 @@ function GoogleMapComponent({ center, viewTarget, onLocationDetails }) {
     setMarkers({
       searchedLocation: searchedLocationMarker,
       antipode: antipodeMarker,
+      mcdonalds: markers.mcdonalds,
     });
 
     console.log("Both markers added to map");
