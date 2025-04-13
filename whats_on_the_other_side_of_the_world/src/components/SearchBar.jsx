@@ -114,7 +114,7 @@ export default function SearchBar({ onPlaceSelected }) {
         value={inputValue}
         onChange={handleInputChange}
         onKeyPress={handleKeyPress}
-        placeholder="What's on the other side of..."
+        placeholder="Search for a location..."
         style={{
           flex: "1",
           padding: "8px 12px",
