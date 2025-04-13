@@ -1,11 +1,9 @@
-// App.jsx - Updated version
 import { useState, useEffect } from "react";
 import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import GoogleMapComponent from "./components/GoogleMapComponent";
 import Footer from "./components/Footer";
 
-// Create a global flag to track if we've started loading the script
 if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
   window.googleMapsScriptStartedLoading = false;
 }
@@ -13,11 +11,10 @@ if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
 function App() {
   const [apiKey, setApiKey] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
+  const [searchText, setSearchText] = useState("");
   const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
 
-  // Load Google Maps script only once per page load
   useEffect(() => {
-    // Skip if we've already started loading or Google Maps is already loaded
     if (
       window.googleMapsScriptStartedLoading ||
       (window.google && window.google.maps)
@@ -28,60 +25,61 @@ function App() {
       return;
     }
 
-    // Mark that we've started loading the script
     window.googleMapsScriptStartedLoading = true;
 
-    // Fetch API key
     fetch("http://localhost:5005/api/get-api-key")
       .then((res) => res.json())
       .then((data) => {
         setApiKey(data.apiKey);
 
-        // Create script with correct parameters for the new Maps API
         const script = document.createElement("script");
-        script.id = "google-maps-script";
-        // Use loading=async in the URL for better performance
         script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&callback=googleMapsCallback&libraries=maps,marker,places&v=beta&loading=async`;
         script.async = true;
 
-        // Create a global callback
-        window.googleMapsCallback = () => {
-          console.log("Google Maps API fully loaded");
-          setGoogleScriptLoaded(true);
-        };
-
-        // Handle errors
-        script.onerror = (error) => {
-          console.error("Error loading Google Maps script:", error);
-          window.googleMapsScriptStartedLoading = false; // Reset the flag so we can try again
-        };
+        window.googleMapsCallback = () => setGoogleScriptLoaded(true);
+        script.onerror = () => (window.googleMapsScriptStartedLoading = false);
 
         document.head.appendChild(script);
       })
-      .catch((error) => {
-        console.error("Error fetching API key:", error);
-        window.googleMapsScriptStartedLoading = false; // Reset the flag so we can try again
+      .catch(() => {
+        window.googleMapsScriptStartedLoading = false;
       });
 
-    // Cleanup function
     return () => {
-      // Don't remove the script as it needs to persist across component remounts
-      // Just clean up the callback
       if (window.googleMapsCallback) {
         window.googleMapsCallback = null;
       }
     };
   }, []);
 
-  // Updated function to handle selected place
+  // Handle when a location is selected from autocomplete
   const handlePlaceSelected = ({ lat, lng }) => {
-    console.log("App received selected location coordinates:", { lat, lng });
+    console.log("Location selected from autocomplete:", { lat, lng });
     setSearchLocation({ lat, lng });
   };
 
-  const handleReset = () => {
-    console.log("Resetting search location");
-    setSearchLocation(null);
+  // Handle text search when autocomplete doesn't provide coordinates
+  const handleSearchText = (text) => {
+    console.log("Searching for location text:", text);
+    setSearchText(text);
+
+    // Use Geocoder to convert text to coordinates
+    if (window.google && window.google.maps) {
+      const geocoder = new window.google.maps.Geocoder();
+
+      geocoder.geocode({ address: text }, (results, status) => {
+        if (status === "OK" && results && results.length > 0) {
+          const location = results[0].geometry.location;
+          const lat = location.lat();
+          const lng = location.lng();
+
+          console.log("Geocoded coordinates:", { lat, lng });
+          setSearchLocation({ lat, lng });
+        } else {
+          console.log("Geocoding failed with status:", status);
+        }
+      });
+    }
   };
 
   return (
@@ -90,22 +88,22 @@ function App() {
       <div className="mainScreen">
         {apiKey && googleScriptLoaded ? (
           <>
-            <SearchBar onPlaceSelected={handlePlaceSelected} />
+            <SearchBar
+              onPlaceSelected={handlePlaceSelected}
+              onSearchText={handleSearchText}
+            />
             <GoogleMapComponent center={searchLocation} />
-            {searchLocation && (
-              <div className="coordinates-display">
-                <p>
-                  Selected Location: {searchLocation.lat.toFixed(6)},{" "}
-                  {searchLocation.lng.toFixed(6)}
-                </p>
-              </div>
-            )}
           </>
         ) : (
           <p>Loading Google Maps...</p>
         )}
       </div>
-      <Footer onReset={handleReset} />
+      <Footer
+        onReset={() => {
+          setSearchLocation(null);
+          setSearchText("");
+        }}
+      />
     </>
   );
 }
