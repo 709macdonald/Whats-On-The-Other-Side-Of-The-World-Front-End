@@ -3,6 +3,61 @@ import { useRef, useEffect, useState } from "react";
 export default function SearchBar({ onPlaceSelected }) {
   const [inputValue, setInputValue] = useState("");
   const inputRef = useRef(null);
+  const autocompleteRef = useRef(null);
+
+  // Initialize Google Places Autocomplete
+  useEffect(() => {
+    if (
+      !inputRef.current ||
+      !window.google ||
+      !window.google.maps ||
+      !window.google.maps.places
+    ) {
+      return;
+    }
+
+    // Create the autocomplete object using the standard Google Maps JavaScript API
+    const autocomplete = new window.google.maps.places.Autocomplete(
+      inputRef.current,
+      {
+        fields: ["geometry", "name", "formatted_address"],
+      }
+    );
+
+    // Store the autocomplete object in a ref
+    autocompleteRef.current = autocomplete;
+
+    // Listen for place selection
+    autocomplete.addListener("place_changed", () => {
+      const place = autocomplete.getPlace();
+
+      console.log("Place selected:", place);
+
+      if (place.geometry && place.geometry.location) {
+        const lat = place.geometry.location.lat();
+        const lng = place.geometry.location.lng();
+
+        console.log("Place coordinates:", { lat, lng });
+
+        // Update the input value with the selected place name
+        setInputValue(place.name || place.formatted_address || "");
+
+        // Pass coordinates to parent component
+        if (onPlaceSelected) {
+          onPlaceSelected({ lat, lng });
+        }
+      }
+    });
+
+    return () => {
+      // Clean up listener when component unmounts
+      if (autocompleteRef.current && window.google) {
+        window.google.maps.event.clearInstanceListeners(
+          autocompleteRef.current
+        );
+      }
+    };
+  }, [onPlaceSelected]);
 
   // Handle input change
   const handleInputChange = (e) => {
