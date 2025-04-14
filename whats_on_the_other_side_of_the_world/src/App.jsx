@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import Header from "./components/Header/Header";
 import SearchBar from "./components/SearchBar/SearchBar";
-import GoogleMapComponent from "./components//Map/GoogleMapComponent";
+import GoogleMapComponent from "./components/Map/GoogleMapComponent";
 import Footer from "./components/Footer/Footer";
+import WelcomeScreen from "./components/WelcomeScreen/WelcomeScreen";
 import { getDirections } from "./services/DirectionsService";
 import {
   findNearestMcDonalds,
@@ -16,6 +17,7 @@ if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
 }
 
 function App() {
+  const [appStarted, setAppStarted] = useState(false);
   const [apiKey, setApiKey] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
   const [searchText, setSearchText] = useState("");
@@ -55,16 +57,20 @@ function App() {
 
   // Load McDonald's data
   useEffect(() => {
+    if (!appStarted) return;
+
     const fetchMcDonaldsData = async () => {
       const data = await loadMcDonaldsData();
       setMcDonaldsData(data);
     };
 
     fetchMcDonaldsData();
-  }, []);
+  }, [appStarted]);
 
   // Initialize Google Maps
   useEffect(() => {
+    if (!appStarted) return;
+
     if (
       window.googleMapsScriptStartedLoading ||
       (window.google && window.google.maps)
@@ -100,7 +106,7 @@ function App() {
         window.googleMapsCallback = null;
       }
     };
-  }, []);
+  }, [appStarted]);
 
   // Find nearest McDonald's when antipode location changes
   useEffect(() => {
@@ -197,6 +203,14 @@ function App() {
       antipodeCountry: "",
     });
   };
+
+  const handleStartApp = () => {
+    setAppStarted(true);
+  };
+
+  if (!appStarted) {
+    return <WelcomeScreen onStart={handleStartApp} />;
+  }
 
   return (
     <>
