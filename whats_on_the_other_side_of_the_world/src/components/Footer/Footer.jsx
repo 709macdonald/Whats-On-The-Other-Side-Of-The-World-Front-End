@@ -18,7 +18,6 @@ function Footer({
 }) {
   return (
     <div className="footer">
-      {/* Coordinates display */}
       {searchPerformed && originalLocation && antipodeLocation && (
         <LocationInfo
           originalLocation={originalLocation}
@@ -28,12 +27,10 @@ function Footer({
         />
       )}
 
-      {/* McDonald's information display */}
       {searchPerformed && nearestMcDonalds && viewTarget === "mcdonalds" && (
         <McdonaldsInfo nearestMcDonalds={nearestMcDonalds} />
       )}
 
-      {/* Navigation Buttons */}
       <NavigationButtons
         searchPerformed={searchPerformed}
         onReset={onReset}

@@ -1,4 +1,3 @@
-// Function to get directions between original location and antipode
 export const getDirections = async (origin, destination) => {
   if (!window.google || !window.google.maps || !origin || !destination) {
     return {
@@ -18,13 +17,12 @@ export const getDirections = async (origin, destination) => {
             destination.lat,
             destination.lng
           ),
-          travelMode: window.google.maps.TravelMode.DRIVING, // Default to driving
+          travelMode: window.google.maps.TravelMode.DRIVING,
         },
         (response, status) => {
           if (status === "OK") {
             resolve(response);
           } else if (status === "ZERO_RESULTS") {
-            // Try with TRANSIT if DRIVING fails
             directionsService.route(
               {
                 origin: new window.google.maps.LatLng(origin.lat, origin.lng),
@@ -49,7 +47,6 @@ export const getDirections = async (origin, destination) => {
       );
     });
 
-    // Process and format directions
     const route = result.routes[0];
     const leg = route.legs[0];
 

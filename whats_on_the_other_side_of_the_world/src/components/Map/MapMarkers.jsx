@@ -1,11 +1,9 @@
 import React from "react";
 
-// Component to create different marker types
 export const createSearchedLocationMarker = () => {
   const container = document.createElement("div");
   container.style.position = "relative";
 
-  // Create the green pointer marker (matching the button color #4CAF50)
   const marker = document.createElement("div");
   marker.innerHTML = `
     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -26,7 +24,6 @@ export const createAntipodeMarker = () => {
   const container = document.createElement("div");
   container.style.position = "relative";
 
-  // Create the red and white pointer marker
   const marker = document.createElement("div");
   marker.innerHTML = `
     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -47,7 +44,6 @@ export const createMcDonaldsMarker = () => {
   const container = document.createElement("div");
   container.style.position = "relative";
 
-  // Create the McDonald's marker with branded colors
   const marker = document.createElement("div");
   marker.innerHTML = `
     <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">

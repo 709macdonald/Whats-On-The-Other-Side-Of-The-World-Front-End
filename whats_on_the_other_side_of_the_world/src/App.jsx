@@ -11,7 +11,6 @@ import {
 } from "./services/McdonaldsService";
 import "./index.css";
 
-// Make sure we don't initialize Google Maps more than once
 if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
   window.googleMapsScriptStartedLoading = false;
 }
@@ -34,12 +33,10 @@ function App() {
     antipodeCountry: "",
   });
 
-  // Handle show directions
   const handleShowDirections = async () => {
     if (locationDetails.original && locationDetails.antipode) {
       setViewTarget("directions");
 
-      // If we already have directions, don't fetch again
       if (!directions) {
         console.log(
           "Fetching directions between original location and antipode"
@@ -55,7 +52,6 @@ function App() {
     }
   };
 
-  // Load McDonald's data
   useEffect(() => {
     if (!appStarted) return;
 
@@ -67,7 +63,6 @@ function App() {
     fetchMcDonaldsData();
   }, [appStarted]);
 
-  // Initialize Google Maps
   useEffect(() => {
     if (!appStarted) return;
 
@@ -108,7 +103,6 @@ function App() {
     };
   }, [appStarted]);
 
-  // Find nearest McDonald's when antipode location changes
   useEffect(() => {
     if (locationDetails.antipode && mcDonaldsData.length > 0) {
       const nearest = findNearestMcDonalds(
@@ -128,21 +122,17 @@ function App() {
     }
   }, [locationDetails.antipode, mcDonaldsData]);
 
-  // Handle when a location is selected from autocomplete
   const handlePlaceSelected = ({ lat, lng }) => {
     console.log("Location selected from autocomplete:", { lat, lng });
     setSearchLocation({ lat, lng });
-    setShowSearch(false); // Hide search bar after selection
-    // Set view target to antipode by default
+    setShowSearch(false);
     setViewTarget("antipode");
   };
 
-  // Handle text search when autocomplete doesn't provide coordinates
   const handleSearchText = (text) => {
     console.log("Searching for location text:", text);
     setSearchText(text);
 
-    // Use Geocoder to convert text to coordinates
     if (window.google && window.google.maps) {
       const geocoder = new window.google.maps.Geocoder();
 
@@ -154,8 +144,7 @@ function App() {
 
           console.log("Geocoded coordinates:", { lat, lng });
           setSearchLocation({ lat, lng });
-          setShowSearch(false); // Hide search bar after search
-          // Set view target to antipode by default
+          setShowSearch(false);
           setViewTarget("antipode");
         } else {
           console.log("Geocoding failed with status:", status);
@@ -164,17 +153,14 @@ function App() {
     }
   };
 
-  // Handle zoom to original location
   const handleViewOriginal = () => {
     setViewTarget("original");
   };
 
-  // Handle zoom to antipode
   const handleViewAntipode = () => {
     setViewTarget("antipode");
   };
 
-  // Handle zoom to nearest McDonald's
   const handleViewMcDonalds = () => {
     if (nearestMcDonalds) {
       setViewTarget("mcdonalds");
@@ -183,16 +169,14 @@ function App() {
     }
   };
 
-  // Handle location details update
   const handleLocationDetails = (details) => {
     setLocationDetails(details);
   };
 
-  // Handle reset
   const handleReset = () => {
     setSearchLocation(null);
     setSearchText("");
-    setShowSearch(true); // Show search bar again
+    setShowSearch(true);
     setViewTarget(null);
     setNearestMcDonalds(null);
     setDirections(null);

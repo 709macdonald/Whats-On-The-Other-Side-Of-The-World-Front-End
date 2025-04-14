@@ -5,7 +5,6 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
   const inputRef = useRef(null);
   const autocompleteRef = useRef(null);
 
-  // Initialize Google Places Autocomplete
   useEffect(() => {
     if (
       !inputRef.current ||
@@ -16,7 +15,6 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
       return;
     }
 
-    // Create the autocomplete object
     const autocomplete = new window.google.maps.places.Autocomplete(
       inputRef.current,
       {
@@ -24,10 +22,8 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
       }
     );
 
-    // Store the autocomplete object in a ref
     autocompleteRef.current = autocomplete;
 
-    // Listen for place selection
     autocomplete.addListener("place_changed", () => {
       const place = autocomplete.getPlace();
 
@@ -35,10 +31,8 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
         const lat = place.geometry.location.lat();
         const lng = place.geometry.location.lng();
 
-        // Update the input value with the selected place name
         setInputValue(place.name || place.formatted_address || "");
 
-        // Pass coordinates to parent component
         if (onPlaceSelected) {
           onPlaceSelected({ lat, lng });
         }
@@ -46,7 +40,6 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
     });
 
     return () => {
-      // Clean up listener when component unmounts
       if (autocompleteRef.current && window.google) {
         window.google.maps.event.clearInstanceListeners(
           autocompleteRef.current
@@ -55,22 +48,18 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
     };
   }, [onPlaceSelected]);
 
-  // Handle input change
   const handleInputChange = (e) => {
     setInputValue(e.target.value);
   };
 
-  // Handle search button click
   const handleSearch = () => {
     if (inputValue.trim() === "") return;
 
-    // If onSearchText is provided, pass the text
     if (onSearchText) {
       onSearchText(inputValue);
       return;
     }
 
-    // Otherwise use Google's Geocoder to convert text to coordinates
     if (window.google && window.google.maps) {
       const geocoder = new window.google.maps.Geocoder();
 
@@ -88,7 +77,6 @@ function SearchBar({ onPlaceSelected, onSearchText }) {
     }
   };
 
-  // Handle Enter key press
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       handleSearch();

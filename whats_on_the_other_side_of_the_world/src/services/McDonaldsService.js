@@ -1,6 +1,5 @@
 import { calculateDistance } from "./MapUtils";
 
-// Function to find nearest McDonald's
 export const findNearestMcDonalds = (latitude, longitude, mcDonaldsData) => {
   if (!mcDonaldsData || mcDonaldsData.length === 0) {
     console.log("No McDonald's data available");
@@ -30,17 +29,14 @@ export const findNearestMcDonalds = (latitude, longitude, mcDonaldsData) => {
   return nearestLocation;
 };
 
-// Load McDonald's data
 export const loadMcDonaldsData = async () => {
   try {
-    // Using dynamic import to load the JSON file
     const data = await import("../data/McDonalds.json");
     console.log("McDonald's data loaded:", data.default.length, "locations");
     return data.default;
   } catch (importError) {
     console.error("Error loading McDonald's data:", importError);
 
-    // Fallback to fetch if import doesn't work
     try {
       const response = await fetch("../data/McDonalds.json");
       if (!response.ok) {
