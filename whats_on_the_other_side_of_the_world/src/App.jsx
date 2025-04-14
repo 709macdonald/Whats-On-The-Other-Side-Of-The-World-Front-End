@@ -3,7 +3,14 @@ import Header from "./components/Header";
 import SearchBar from "./components/SearchBar";
 import GoogleMapComponent from "./components/GoogleMapComponent";
 import Footer from "./components/Footer";
+import { getDirections } from "./services/DirectionsService";
+import {
+  findNearestMcDonalds,
+  loadMcDonaldsData,
+} from "./services/McdonaldsService";
+import "./styles.css";
 
+// Make sure we don't initialize Google Maps more than once
 if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
   window.googleMapsScriptStartedLoading = false;
 }
@@ -17,86 +24,13 @@ function App() {
   const [viewTarget, setViewTarget] = useState(null);
   const [mcDonaldsData, setMcDonaldsData] = useState([]);
   const [nearestMcDonalds, setNearestMcDonalds] = useState(null);
-
-  // Function to get directions between original location and antipode
-  const getDirections = async (origin, destination) => {
-    if (!window.google || !window.google.maps || !origin || !destination) {
-      return {
-        status: "ERROR",
-        errorMessage: "Directions service not available",
-      };
-    }
-
-    try {
-      const directionsService = new window.google.maps.DirectionsService();
-
-      const result = await new Promise((resolve, reject) => {
-        directionsService.route(
-          {
-            origin: new window.google.maps.LatLng(origin.lat, origin.lng),
-            destination: new window.google.maps.LatLng(
-              destination.lat,
-              destination.lng
-            ),
-            travelMode: window.google.maps.TravelMode.DRIVING, // Default to driving
-          },
-          (response, status) => {
-            if (status === "OK") {
-              resolve(response);
-            } else if (status === "ZERO_RESULTS") {
-              // Try with TRANSIT if DRIVING fails
-              directionsService.route(
-                {
-                  origin: new window.google.maps.LatLng(origin.lat, origin.lng),
-                  destination: new window.google.maps.LatLng(
-                    destination.lat,
-                    destination.lng
-                  ),
-                  travelMode: window.google.maps.TravelMode.TRANSIT,
-                },
-                (transitResponse, transitStatus) => {
-                  if (transitStatus === "OK") {
-                    resolve(transitResponse);
-                  } else {
-                    reject(transitStatus);
-                  }
-                }
-              );
-            } else {
-              reject(status);
-            }
-          }
-        );
-      });
-
-      // Process and format directions
-      const route = result.routes[0];
-      const leg = route.legs[0];
-
-      const processedDirections = {
-        status: "OK",
-        distance: leg.distance.text,
-        duration: leg.duration.text,
-        startAddress: leg.start_address,
-        endAddress: leg.end_address,
-        steps: leg.steps.map((step) => ({
-          distance: step.distance.text,
-          duration: step.duration.text,
-          instruction: step.instructions,
-          travelMode: step.travel_mode,
-        })),
-      };
-
-      return processedDirections;
-    } catch (error) {
-      console.error("Error getting directions:", error);
-      return {
-        status: "ERROR",
-        errorMessage:
-          "Could not calculate directions. The antipode might be in an inaccessible location.",
-      };
-    }
-  };
+  const [directions, setDirections] = useState(null);
+  const [locationDetails, setLocationDetails] = useState({
+    original: null,
+    antipode: null,
+    originalCountry: "",
+    antipodeCountry: "",
+  });
 
   // Handle show directions
   const handleShowDirections = async () => {
@@ -118,99 +52,18 @@ function App() {
       console.log("Cannot show directions: locations not set");
     }
   };
-  const [locationDetails, setLocationDetails] = useState({
-    original: null,
-    antipode: null,
-    originalCountry: "",
-    antipodeCountry: "",
-  });
-
-  // Function to calculate distance between two coordinates (haversine formula)
-  const calculateDistance = (lat1, lon1, lat2, lon2) => {
-    const R = 6371; // Radius of the Earth in km
-    const dLat = ((lat2 - lat1) * Math.PI) / 180;
-    const dLon = ((lon2 - lon1) * Math.PI) / 180;
-
-    const a =
-      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos((lat1 * Math.PI) / 180) *
-        Math.cos((lat2 * Math.PI) / 180) *
-        Math.sin(dLon / 2) *
-        Math.sin(dLon / 2);
-
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-    const distance = R * c; // Distance in km
-
-    return distance;
-  };
-
-  // Function to find nearest McDonald's
-  const findNearestMcDonalds = (latitude, longitude) => {
-    if (!mcDonaldsData || mcDonaldsData.length === 0) {
-      console.log("No McDonald's data available");
-      return null;
-    }
-
-    let nearestLocation = null;
-    let minDistance = Infinity;
-
-    mcDonaldsData.forEach((location) => {
-      const distance = calculateDistance(
-        latitude,
-        longitude,
-        location.latitude,
-        location.longitude
-      );
-
-      if (distance < minDistance) {
-        minDistance = distance;
-        nearestLocation = {
-          ...location,
-          distance: distance,
-        };
-      }
-    });
-
-    return nearestLocation;
-  };
 
   // Load McDonald's data
   useEffect(() => {
-    // Using dynamic import to load the JSON file
-    import("../src/data/McDonalds.json")
-      .then((data) => {
-        console.log(
-          "McDonald's data loaded:",
-          data.default.length,
-          "locations"
-        );
-        setMcDonaldsData(data.default);
-      })
-      .catch((error) => {
-        console.error("Error loading McDonald's data:", error);
+    const fetchMcDonaldsData = async () => {
+      const data = await loadMcDonaldsData();
+      setMcDonaldsData(data);
+    };
 
-        // Fallback to fetch if import doesn't work
-        fetch("../src/data/McDonalds.json")
-          .then((response) => {
-            if (!response.ok) {
-              throw new Error("Failed to fetch McDonald's data");
-            }
-            return response.json();
-          })
-          .then((data) => {
-            console.log(
-              "McDonald's data loaded via fetch:",
-              data.length,
-              "locations"
-            );
-            setMcDonaldsData(data);
-          })
-          .catch((fallbackError) => {
-            console.error("Fallback fetch also failed:", fallbackError);
-          });
-      });
+    fetchMcDonaldsData();
   }, []);
 
+  // Initialize Google Maps
   useEffect(() => {
     if (
       window.googleMapsScriptStartedLoading ||
@@ -254,7 +107,8 @@ function App() {
     if (locationDetails.antipode && mcDonaldsData.length > 0) {
       const nearest = findNearestMcDonalds(
         locationDetails.antipode.lat,
-        locationDetails.antipode.lng
+        locationDetails.antipode.lng,
+        mcDonaldsData
       );
 
       if (nearest) {
