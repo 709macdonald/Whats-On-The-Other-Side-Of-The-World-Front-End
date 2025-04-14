@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
-import Header from "./components/Header";
-import SearchBar from "./components/SearchBar";
-import GoogleMapComponent from "./components/GoogleMapComponent";
-import Footer from "./components/Footer";
+import Header from "./components/Header/Header";
+import SearchBar from "./components/SearchBar/SearchBar";
+import GoogleMapComponent from "./components//Map/GoogleMapComponent";
+import Footer from "./components/Footer/Footer";
 import { getDirections } from "./services/DirectionsService";
 import {
   findNearestMcDonalds,
   loadMcDonaldsData,
 } from "./services/McdonaldsService";
-import "./styles.css";
+import "./index.css";
 
 // Make sure we don't initialize Google Maps more than once
 if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {

@@ -1,5 +1,8 @@
 import React, { useRef, useEffect, useState } from "react";
-import { calculateAntipode, getCountryFromCoordinates } from "./MapUtils";
+import {
+  calculateAntipode,
+  getCountryFromCoordinates,
+} from "../../services/MapUtils";
 import {
   createSearchedLocationMarker,
   createAntipodeMarker,
