@@ -7,7 +7,6 @@ import {
   getCountryFromCoordinates,
 } from "../../services/MapUtils";
 
-// Fix Leaflet marker icon issue
 import icon from "leaflet/dist/images/marker-icon.png";
 import iconShadow from "leaflet/dist/images/marker-shadow.png";
 
@@ -20,7 +19,6 @@ let DefaultIcon = L.icon({
 
 L.Marker.prototype.options.icon = DefaultIcon;
 
-// Create custom icons for our different marker types
 const createGreenIcon = () => {
   return L.divIcon({
     className: "custom-marker green-marker",
@@ -78,7 +76,6 @@ const createMcDonaldsIcon = () => {
   });
 };
 
-// MapView component to handle changing map center and zoom
 function MapView({ center, zoom }) {
   const map = useMap();
 
@@ -91,28 +88,23 @@ function MapView({ center, zoom }) {
   return null;
 }
 
-// Custom component to set map bounds and zoom restrictions
 function MapBoundsController() {
   const map = useMap();
 
   useEffect(() => {
-    // Set minimum zoom level (prevents zooming out too far)
     map.setMinZoom(2);
 
-    // Optional: Set maximum bounds to prevent panning too far
     const worldBounds = [
-      [-90, -180], // Southwest corner
-      [90, 180], // Northeast corner
+      [-90, -180],
+      [90, 180],
     ];
     map.setMaxBounds(worldBounds);
 
-    // Make the bounds slightly "sticky" so the user can't drag too far outside
     map.on("drag", function () {
       map.panInsideBounds(worldBounds, { animate: false });
     });
 
     return () => {
-      // Clean up event listeners
       map.off("drag");
     };
   }, [map]);
@@ -134,12 +126,10 @@ function LeafletMapComponent({
     mcdonalds: null,
   });
 
-  // Add refs to track geocoding status
   const hasGeocodedOriginalRef = useRef(false);
   const hasGeocodedAntipodeRef = useRef(false);
   const lastCenterRef = useRef(null);
 
-  // Update McDonald's marker when nearestMcDonalds changes
   useEffect(() => {
     if (nearestMcDonalds) {
       setMarkers((prevMarkers) => ({
@@ -152,7 +142,6 @@ function LeafletMapComponent({
     }
   }, [nearestMcDonalds]);
 
-  // Handle view target changes (for the zoom buttons)
   useEffect(() => {
     if (!viewTarget || !center) {
       return;
@@ -170,10 +159,8 @@ function LeafletMapComponent({
     }
   }, [viewTarget, markers, nearestMcDonalds, center]);
 
-  // Handle center changes and calculate antipode
   useEffect(() => {
     if (!center) {
-      // Reset view if no center is provided
       setMapCenter([0, 0]);
       setMapZoom(2);
       setMarkers({
@@ -187,28 +174,22 @@ function LeafletMapComponent({
       return;
     }
 
-    // Check if this is a new center location
     const isSameLocation =
       lastCenterRef.current &&
       lastCenterRef.current.lat === center.lat &&
       lastCenterRef.current.lng === center.lng;
 
     if (isSameLocation) {
-      // Skip processing if it's the same location
       return;
     }
 
-    // Update the last center reference
     lastCenterRef.current = { ...center };
 
-    // Reset geocoding flags when location changes
     hasGeocodedOriginalRef.current = false;
     hasGeocodedAntipodeRef.current = false;
 
-    // Calculate antipode location
     const antipode = calculateAntipode(center.lat, center.lng);
 
-    // Store markers - keep mcdonalds marker if it exists
     setMarkers((prevMarkers) => ({
       original: center,
       antipode: antipode,
@@ -220,19 +201,15 @@ function LeafletMapComponent({
         : prevMarkers.mcdonalds,
     }));
 
-    // Set view to antipode by default when location changes
     setMapCenter([antipode.lat, antipode.lng]);
     setMapZoom(8);
 
-    // Get country information for both locations
     const fetchLocationDetails = async () => {
       try {
-        // Only fetch country data if we haven't already for this center location
         if (
           !hasGeocodedOriginalRef.current ||
           !hasGeocodedAntipodeRef.current
         ) {
-          // Set flags to true to prevent repeated API calls
           hasGeocodedOriginalRef.current = true;
           hasGeocodedAntipodeRef.current = true;
 
@@ -270,8 +247,8 @@ function LeafletMapComponent({
         style={{ height: "100%", width: "100%" }}
         zoomControl={true}
         attributionControl={true}
-        minZoom={2} // Set minimum zoom here as well
-        maxBoundsViscosity={1.0} // Make bounds very "sticky"
+        minZoom={2}
+        maxBoundsViscosity={1.0}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -309,7 +286,6 @@ function LeafletMapComponent({
           </Marker>
         )}
 
-        {/* Only show McDonald's marker when viewTarget is set to "mcdonalds" */}
         {markers.mcdonalds &&
           viewTarget === "mcdonalds" &&
           nearestMcDonalds && (

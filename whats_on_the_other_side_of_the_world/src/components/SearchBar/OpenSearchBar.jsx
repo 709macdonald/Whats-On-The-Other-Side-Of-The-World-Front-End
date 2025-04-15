@@ -16,28 +16,23 @@ function OpenSearchBar({ onPlaceSelected }) {
   const inputRef = useRef(null);
   const debounceTimerRef = useRef(null);
 
-  // Fetch suggestions when input changes
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInputValue(value);
     setError("");
 
-    // Reset selection
     setSelectedIndex(-1);
 
-    // Clear previous timer
     if (debounceTimerRef.current) {
       clearTimeout(debounceTimerRef.current);
     }
 
-    // Don't search for very short inputs
     if (value.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
 
-    // Set new timer to debounce API requests
     debounceTimerRef.current = setTimeout(async () => {
       try {
         setLoading(true);
@@ -49,10 +44,9 @@ function OpenSearchBar({ onPlaceSelected }) {
       } finally {
         setLoading(false);
       }
-    }, 300); // 300ms debounce time
+    }, 300);
   };
 
-  // Handle suggestion click
   const handleSuggestionClick = (suggestion) => {
     setInputValue(suggestion.text);
     setShowSuggestions(false);
@@ -65,7 +59,6 @@ function OpenSearchBar({ onPlaceSelected }) {
     }
   };
 
-  // Handle search button click
   const handleSearch = async () => {
     if (inputValue.trim() === "") {
       setError("Please enter a location");
@@ -99,7 +92,6 @@ function OpenSearchBar({ onPlaceSelected }) {
     }
   };
 
-  // Handle keyboard navigation
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
       if (
@@ -107,14 +99,11 @@ function OpenSearchBar({ onPlaceSelected }) {
         selectedIndex >= 0 &&
         selectedIndex < suggestions.length
       ) {
-        // If a suggestion is selected, use that
         handleSuggestionClick(suggestions[selectedIndex]);
       } else {
-        // Otherwise perform a search with the current input
         handleSearch();
       }
     } else if (e.key === "ArrowDown") {
-      // Navigate down the suggestion list
       e.preventDefault();
       if (showSuggestions) {
         setSelectedIndex((prev) =>
@@ -122,18 +111,15 @@ function OpenSearchBar({ onPlaceSelected }) {
         );
       }
     } else if (e.key === "ArrowUp") {
-      // Navigate up the suggestion list
       e.preventDefault();
       if (showSuggestions) {
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : 0));
       }
     } else if (e.key === "Escape") {
-      // Close suggestion list
       setShowSuggestions(false);
     }
   };
 
-  // Scroll to selected item
   useEffect(() => {
     if (selectedIndex >= 0 && suggestionListRef.current) {
       const selectedElement = suggestionListRef.current.children[selectedIndex];
@@ -146,7 +132,6 @@ function OpenSearchBar({ onPlaceSelected }) {
     }
   }, [selectedIndex]);
 
-  // Close suggestions when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (

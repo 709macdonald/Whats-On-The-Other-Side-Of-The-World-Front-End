@@ -24,10 +24,8 @@ function App() {
     antipodeCountry: "",
   });
 
-  // Add a ref to track if we've already found the nearest McDonald's
   const hasFoundNearestRef = useRef(false);
 
-  // Load McDonald's data when app starts
   useEffect(() => {
     if (!appStarted) return;
 
@@ -39,14 +37,12 @@ function App() {
     fetchMcDonaldsData();
   }, [appStarted]);
 
-  // Find nearest McDonald's when antipode location changes
   useEffect(() => {
     if (
       locationDetails.antipode &&
       mcDonaldsData.length > 0 &&
       !hasFoundNearestRef.current
     ) {
-      // Set the ref to true so we don't run this again
       hasFoundNearestRef.current = true;
 
       const nearest = findNearestMcDonalds(
@@ -56,58 +52,41 @@ function App() {
       );
 
       if (nearest) {
-        console.log(
-          "Nearest McDonald's found:",
-          nearest.name,
-          `(${nearest.distance.toFixed(2)} km away)`
-        );
         setNearestMcDonalds(nearest);
       }
     }
   }, [locationDetails.antipode, mcDonaldsData]);
 
-  // Handle when a location is selected from search
   const handlePlaceSelected = (location) => {
-    console.log("Location selected:", location);
     setSearchLocation(location);
-    setShowSearch(false); // Hide search bar after selection
-    // Set view target to antipode by default
+    setShowSearch(false);
     setViewTarget("antipode");
-    // Reset the flag when a new location is selected
     hasFoundNearestRef.current = false;
   };
 
-  // Handle zoom to original location
   const handleViewOriginal = () => {
     setViewTarget("original");
   };
 
-  // Handle zoom to antipode
   const handleViewAntipode = () => {
     setViewTarget("antipode");
   };
 
-  // Handle zoom to nearest McDonald's
   const handleViewMcDonalds = () => {
     if (nearestMcDonalds) {
       setViewTarget("mcdonalds");
-    } else {
-      console.log("No nearest McDonald's found yet");
     }
   };
 
-  // Handle location details update
   const handleLocationDetails = (details) => {
     setLocationDetails(details);
   };
 
-  // Handle reset
   const handleReset = () => {
     setSearchLocation(null);
-    setShowSearch(true); // Show search bar again
+    setShowSearch(true);
     setViewTarget(null);
     setNearestMcDonalds(null);
-    // Reset the flag when resetting the app
     hasFoundNearestRef.current = false;
     setLocationDetails({
       original: null,
@@ -117,12 +96,10 @@ function App() {
     });
   };
 
-  // Handle start app button click
   const handleStartApp = () => {
     setAppStarted(true);
   };
 
-  // Show welcome screen if app not started
   if (!appStarted) {
     return <WelcomeScreen onStart={handleStartApp} />;
   }
