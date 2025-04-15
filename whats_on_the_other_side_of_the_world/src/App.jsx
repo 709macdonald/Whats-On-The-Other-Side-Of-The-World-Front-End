@@ -1,31 +1,22 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Header from "./components/Header/Header";
-import SearchBar from "./components/SearchBar/SearchBar";
-import GoogleMapComponent from "./components/Map/GoogleMapComponent";
+import OpenSearchBar from "./components/SearchBar/OpenSearchBar";
+import LeafletMapComponent from "./components/Map/LeafletMapComponent";
 import Footer from "./components/Footer/Footer";
 import WelcomeScreen from "./components/WelcomeScreen/WelcomeScreen";
-import { getDirections } from "./services/DirectionsService";
 import {
   findNearestMcDonalds,
   loadMcDonaldsData,
 } from "./services/McdonaldsService";
 import "./index.css";
 
-if (typeof window !== "undefined" && !window.googleMapsScriptStartedLoading) {
-  window.googleMapsScriptStartedLoading = false;
-}
-
 function App() {
   const [appStarted, setAppStarted] = useState(false);
-  const [apiKey, setApiKey] = useState(null);
   const [searchLocation, setSearchLocation] = useState(null);
-  const [searchText, setSearchText] = useState("");
-  const [googleScriptLoaded, setGoogleScriptLoaded] = useState(false);
   const [showSearch, setShowSearch] = useState(true);
   const [viewTarget, setViewTarget] = useState(null);
   const [mcDonaldsData, setMcDonaldsData] = useState([]);
   const [nearestMcDonalds, setNearestMcDonalds] = useState(null);
-  const [directions, setDirections] = useState(null);
   const [locationDetails, setLocationDetails] = useState({
     original: null,
     antipode: null,
@@ -33,25 +24,10 @@ function App() {
     antipodeCountry: "",
   });
 
-  const handleShowDirections = async () => {
-    if (locationDetails.original && locationDetails.antipode) {
-      setViewTarget("directions");
+  // Add a ref to track if we've already found the nearest McDonald's
+  const hasFoundNearestRef = useRef(false);
 
-      if (!directions) {
-        console.log(
-          "Fetching directions between original location and antipode"
-        );
-        const directionsResult = await getDirections(
-          locationDetails.original,
-          locationDetails.antipode
-        );
-        setDirections(directionsResult);
-      }
-    } else {
-      console.log("Cannot show directions: locations not set");
-    }
-  };
-
+  // Load McDonald's data when app starts
   useEffect(() => {
     if (!appStarted) return;
 
@@ -63,48 +39,16 @@ function App() {
     fetchMcDonaldsData();
   }, [appStarted]);
 
+  // Find nearest McDonald's when antipode location changes
   useEffect(() => {
-    if (!appStarted) return;
-
     if (
-      window.googleMapsScriptStartedLoading ||
-      (window.google && window.google.maps)
+      locationDetails.antipode &&
+      mcDonaldsData.length > 0 &&
+      !hasFoundNearestRef.current
     ) {
-      if (window.google && window.google.maps) {
-        setGoogleScriptLoaded(true);
-      }
-      return;
-    }
+      // Set the ref to true so we don't run this again
+      hasFoundNearestRef.current = true;
 
-    window.googleMapsScriptStartedLoading = true;
-
-    fetch("http://localhost:5005/api/get-api-key")
-      .then((res) => res.json())
-      .then((data) => {
-        setApiKey(data.apiKey);
-
-        const script = document.createElement("script");
-        script.src = `https://maps.googleapis.com/maps/api/js?key=${data.apiKey}&callback=googleMapsCallback&libraries=maps,marker,places&v=beta&loading=async`;
-        script.async = true;
-
-        window.googleMapsCallback = () => setGoogleScriptLoaded(true);
-        script.onerror = () => (window.googleMapsScriptStartedLoading = false);
-
-        document.head.appendChild(script);
-      })
-      .catch(() => {
-        window.googleMapsScriptStartedLoading = false;
-      });
-
-    return () => {
-      if (window.googleMapsCallback) {
-        window.googleMapsCallback = null;
-      }
-    };
-  }, [appStarted]);
-
-  useEffect(() => {
-    if (locationDetails.antipode && mcDonaldsData.length > 0) {
       const nearest = findNearestMcDonalds(
         locationDetails.antipode.lat,
         locationDetails.antipode.lng,
@@ -122,45 +66,28 @@ function App() {
     }
   }, [locationDetails.antipode, mcDonaldsData]);
 
-  const handlePlaceSelected = ({ lat, lng }) => {
-    console.log("Location selected from autocomplete:", { lat, lng });
-    setSearchLocation({ lat, lng });
-    setShowSearch(false);
+  // Handle when a location is selected from search
+  const handlePlaceSelected = (location) => {
+    console.log("Location selected:", location);
+    setSearchLocation(location);
+    setShowSearch(false); // Hide search bar after selection
+    // Set view target to antipode by default
     setViewTarget("antipode");
+    // Reset the flag when a new location is selected
+    hasFoundNearestRef.current = false;
   };
 
-  const handleSearchText = (text) => {
-    console.log("Searching for location text:", text);
-    setSearchText(text);
-
-    if (window.google && window.google.maps) {
-      const geocoder = new window.google.maps.Geocoder();
-
-      geocoder.geocode({ address: text }, (results, status) => {
-        if (status === "OK" && results && results.length > 0) {
-          const location = results[0].geometry.location;
-          const lat = location.lat();
-          const lng = location.lng();
-
-          console.log("Geocoded coordinates:", { lat, lng });
-          setSearchLocation({ lat, lng });
-          setShowSearch(false);
-          setViewTarget("antipode");
-        } else {
-          console.log("Geocoding failed with status:", status);
-        }
-      });
-    }
-  };
-
+  // Handle zoom to original location
   const handleViewOriginal = () => {
     setViewTarget("original");
   };
 
+  // Handle zoom to antipode
   const handleViewAntipode = () => {
     setViewTarget("antipode");
   };
 
+  // Handle zoom to nearest McDonald's
   const handleViewMcDonalds = () => {
     if (nearestMcDonalds) {
       setViewTarget("mcdonalds");
@@ -169,17 +96,19 @@ function App() {
     }
   };
 
+  // Handle location details update
   const handleLocationDetails = (details) => {
     setLocationDetails(details);
   };
 
+  // Handle reset
   const handleReset = () => {
     setSearchLocation(null);
-    setSearchText("");
-    setShowSearch(true);
+    setShowSearch(true); // Show search bar again
     setViewTarget(null);
     setNearestMcDonalds(null);
-    setDirections(null);
+    // Reset the flag when resetting the app
+    hasFoundNearestRef.current = false;
     setLocationDetails({
       original: null,
       antipode: null,
@@ -188,10 +117,12 @@ function App() {
     });
   };
 
+  // Handle start app button click
   const handleStartApp = () => {
     setAppStarted(true);
   };
 
+  // Show welcome screen if app not started
   if (!appStarted) {
     return <WelcomeScreen onStart={handleStartApp} />;
   }
@@ -200,24 +131,13 @@ function App() {
     <>
       <Header />
       <div className="mainScreen">
-        {apiKey && googleScriptLoaded ? (
-          <>
-            {showSearch && (
-              <SearchBar
-                onPlaceSelected={handlePlaceSelected}
-                onSearchText={handleSearchText}
-              />
-            )}
-            <GoogleMapComponent
-              center={searchLocation}
-              viewTarget={viewTarget}
-              onLocationDetails={handleLocationDetails}
-              nearestMcDonalds={nearestMcDonalds}
-            />
-          </>
-        ) : (
-          <p>Loading Google Maps...</p>
-        )}
+        {showSearch && <OpenSearchBar onPlaceSelected={handlePlaceSelected} />}
+        <LeafletMapComponent
+          center={searchLocation}
+          viewTarget={viewTarget}
+          onLocationDetails={handleLocationDetails}
+          nearestMcDonalds={nearestMcDonalds}
+        />
       </div>
       <Footer
         onReset={handleReset}
