@@ -7,7 +7,7 @@ import WelcomeScreen from "./components/WelcomeScreen/WelcomeScreen";
 import {
   findNearestMcDonalds,
   loadMcDonaldsData,
-} from "./services/McdonaldsService";
+} from "./services/McDonaldsService";
 import "./index.css";
 
 function App() {
